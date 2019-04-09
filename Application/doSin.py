@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 n = 100
 X = np.linspace(0,2*np.pi,n)
-Y = 62*np.cos(X) + 62
-Y = Y + 62*np.cos(3*X)
+Y = 40*np.cos(X) + 127.5
+Y = Y + 40*np.cos(3*X) + 20 * np.cos(5*X)
 
 fo = open("cos.c","w")
 fo.write('#include "cos.h"\n\n')
