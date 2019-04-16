@@ -59,6 +59,7 @@
 #include "bcomdef.h"
 #include "peripheral.h"
 #include "simple_peripheral.h"
+#include "adcsinglechannel.h"
 
 /* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
@@ -194,6 +195,9 @@ int main()
   Power_setConstraint(PowerCC26XX_SB_DISALLOW);
   Power_setConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
 #endif // POWER_SAVING | USE_FPGA
+  GPIO_init();
+  BHB_adc_init();
+
 
   /* Initialize ICall module */
   ICall_init();
@@ -208,6 +212,9 @@ int main()
 
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();
+
+
+
 
   return 0;
 }

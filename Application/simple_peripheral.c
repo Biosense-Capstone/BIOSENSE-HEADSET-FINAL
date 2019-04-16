@@ -600,6 +600,8 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
   // Initialize application
   SimpleBLEPeripheral_init();
   uint8_t index_var = 0;
+  uint8_t i;
+  uint16_t ADC_val;
   // uint32_t * cosValInt = *(uint32_t **) & cosVal;
   Util_startClock(&periodicClock);
   // Application main loop
@@ -608,7 +610,10 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
       if (events & SBP_PERIODIC_EVT){
           events &= ~SBP_PERIODIC_EVT;
           Util_startClock(&periodicClock);
-
+          ADC_val = BHB_adc_getVal();
+          for(i = 0; i < 8; i++){
+              scanRspData[7+i] = ADC_val >> i & 0xFF;
+          }
           scanRspData[7] = cosVal[index_var];
           ++index_var;
           if(index_var >= 100){
