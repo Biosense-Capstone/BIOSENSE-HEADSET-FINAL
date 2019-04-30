@@ -5,8 +5,8 @@
  *      Author: wulff
  */
 
-#ifndef ADCSINGLECHANNEL_H_
-#define ADCSINGLECHANNEL_H_
+#ifndef ADCSINGLECHANNEL_H
+#define ADCSINGLECHANNEL_H
 #include <ti/drivers/ADC.h>
 #include <ti/drivers/GPIO.h>
 #include <stdint.h>
@@ -16,4 +16,4 @@ uint16_t BHB_adc_getVal();
 
 
 
-#endif /* ADCSINGLECHANNEL_H_ */
+#endif /* ADCSINGLECHANNEL_H */

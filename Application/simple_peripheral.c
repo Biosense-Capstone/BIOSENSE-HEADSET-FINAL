@@ -63,6 +63,9 @@
 #include "devinfoservice.h"
 #include "simple_gatt_profile.h"
 
+#include <ti/drivers/ADC.h>
+
+
 #if defined(FEATURE_OAD) || defined(IMAGE_INVALIDATE)
 #include "oad_target.h"
 #include "oad.h"
@@ -70,7 +73,6 @@
 
 #include "peripheral.h"
 #include "gapbondmgr.h"
-
 #include "osal_snv.h"
 #include "icall_apimsg.h"
 
@@ -87,7 +89,7 @@
 #endif // USE_CORE_SDK
 #include "board_key.h"
 
-#include "board.h"
+#include "Board.h"
 
 #include "simple_peripheral.h"
 
@@ -97,6 +99,88 @@
 
 #include "cos.h"
 extern const uint8_t cosVal[];
+#include <stdint.h>
+#include <stddef.h>
+
+
+/* ADC sample count */
+#define ADC_SAMPLE_COUNT  (10)
+
+#define THREADSTACKSIZE   (768)
+
+
+
+
+
+
+
+
+/* ADC conversion result variables */
+uint16_t adcValue0;
+uint16_t adcValue1[ADC_SAMPLE_COUNT];
+uint32_t adcValue1MicroVolt[ADC_SAMPLE_COUNT];
+
+ADC_Handle   adc;
+ADC_Params   params;
+
+uint16_t BHB_adc_getVal0(){
+    int_fast16_t res;
+    adc = ADC_open(Board_ADC0, &params);
+    res = ADC_convert(adc, &adcValue0);
+    if (res == ADC_STATUS_SUCCESS) {
+        ADC_close(adc);
+        return adcValue0;
+    }
+    else {
+        ADC_close(adc);
+        return 0;
+    }
+
+
+}
+
+uint16_t BHB_adc_getVal1(){
+    int_fast16_t res;
+    adc = ADC_open(Board_ADC1, &params);
+    res = ADC_convert(adc, &adcValue0);
+    if (res == ADC_STATUS_SUCCESS) {
+        ADC_close(adc);
+        return adcValue0;
+    }
+    else {
+        ADC_close(adc);
+        return 0;
+    }
+
+
+}
+/*
+ *  ======== mainThread ========
+ */
+void BHB_adc_init()
+{
+
+
+    /* Call driver init functions */
+    ADC_init();
+
+
+    ADC_Params_init(&params);
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 /*********************************************************************
  * CONSTANTS
  */
@@ -105,7 +189,7 @@ extern const uint8_t cosVal[];
 #define HI_UINT32(a) (((a) >> 16) & 0xFF)
 
 // Advertising interval when device is discoverable (units of 625us, 160=100ms)
-#define DEFAULT_ADVERTISING_INTERVAL          160
+#define DEFAULT_ADVERTISING_INTERVAL          64
 
 // Limited discoverable mode advertises for 30.72s, and then stops
 // General discoverable mode advertises indefinitely
@@ -144,7 +228,7 @@ extern const uint8_t cosVal[];
 #define DEFAULT_CONN_PAUSE_PERIPHERAL         6
 
 // How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD               100
+#define SBP_PERIODIC_EVT_PERIOD               10
 
 // Type of Display to open
 #if !defined(Display_DISABLE_ALL)
@@ -248,25 +332,37 @@ static uint8_t scanRspData[] =
   'H',
   'B',
 
-  0x5,
+  25,
   GAP_ADTYPE_SERVICE_DATA,
   0x0,
   0x0,
   0x0,
   0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
 
-  // connection interval range
-  0x05,   // length of this data
-  GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE,
-  LO_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),   // 100ms
-  HI_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),
-  LO_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),   // 1s
-  HI_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
 
-  // Tx power level
-  0x02,   // length of this data
-  GAP_ADTYPE_POWER_LEVEL,
-  0       // 0dBm
+
+
+
 };
 
 // GAP - Advertisement data (max size = 31 bytes, though this is
@@ -599,9 +695,9 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
 {
   // Initialize application
   SimpleBLEPeripheral_init();
-  uint8_t index_var = 0;
-  uint8_t i;
+  uint8_t count;
   uint16_t ADC_val;
+  uint32_t period, time;
   // uint32_t * cosValInt = *(uint32_t **) & cosVal;
   Util_startClock(&periodicClock);
   // Application main loop
@@ -610,17 +706,32 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
       if (events & SBP_PERIODIC_EVT){
           events &= ~SBP_PERIODIC_EVT;
           Util_startClock(&periodicClock);
-          ADC_val = BHB_adc_getVal();
-          for(i = 0; i < 8; i++){
-              scanRspData[7+i] = ADC_val >> i & 0xFF;
-          }
-          scanRspData[7] = cosVal[index_var];
-          ++index_var;
-          if(index_var >= 100){
-              index_var = 0;
-          }
-          if(GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
-                               scanRspData) != SUCCESS){
+          period = ti_sysbios_knl_Clock_getTickPeriod__E();
+
+          time = ti_sysbios_knl_Clock_getTicks__E(); // uint32
+
+          ADC_val = BHB_adc_getVal0();
+          scanRspData[7 + 4 * count] = ADC_val & 0xFF;
+          scanRspData[8 + 4 * count] = ADC_val >> (8) & 0xFF;
+
+          ADC_val = BHB_adc_getVal1();
+          scanRspData[9 + 4 * count] = ADC_val & 0xFF;
+          scanRspData[10 + 4 * count] = ADC_val >> (8) & 0xFF;
+
+
+          scanRspData[23 + 4 * count] = time & 0xFF;
+          scanRspData[24 + 4 * count] = time >> (8) & 0xFF;
+
+
+
+          count ++;
+
+          if(count > 3){
+              count = 0;
+              if(GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
+                                   scanRspData) != SUCCESS){
+                  //--index_var;
+              }
               //--index_var;
           }
 

@@ -52,9 +52,11 @@ uint16_t adcValue1[ADC_SAMPLE_COUNT];
 uint32_t adcValue1MicroVolt[ADC_SAMPLE_COUNT];
 
 ADC_Handle   adc;
+ADC_Params   params;
 
-uint16_t BHB_adc_getVal(){
+uint16_t BHB_adc_getVal0(){
     int_fast16_t res;
+    adc = ADC_open(Board_ADC0, &params);
     res = ADC_convert(adc, &adcValue0);
     if (res == ADC_STATUS_SUCCESS) {
         return adcValue0 >> 4;
@@ -62,24 +64,35 @@ uint16_t BHB_adc_getVal(){
     else {
         return 0;
     }
+    adc = ADC_close(adc)
 
 }
 
+uint16_t BHB_adc_getVal1(){
+    int_fast16_t res;
+    adc = ADC_open(Board_ADC1, &params);
+    res = ADC_convert(adc, &adcValue0);
+    if (res == ADC_STATUS_SUCCESS) {
+        return adcValue0 >> 4;
+    }
+    else {
+        return 0;
+    }
+    adc = ADC_close(adc)
+
+}
 /*
  *  ======== mainThread ========
  */
 void BHB_adc_init()
 {
-    struct sched_param  priParam;
-    ADC_Params   params;
-    int_fast16_t res;
+
 
     /* Call driver init functions */
     ADC_init();
 
 
     ADC_Params_init(&params);
-    adc = ADC_open(Board_ADC0, &params);
 
     if (adc == NULL) {
         //Display_printf(display, 0, 0, "Error initializing ADC channel 0\n");
@@ -88,7 +101,3 @@ void BHB_adc_init()
 
 }
 
-void BHB_adc_close()
-{
-    ADC_close(adc);
-}

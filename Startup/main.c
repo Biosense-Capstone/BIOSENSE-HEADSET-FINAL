@@ -48,6 +48,7 @@
  * INCLUDES
  */
 
+#include <Application/adcsinglechannel.h.old>
 #include <xdc/runtime/Error.h>
 
 #include <ti/drivers/Power.h>
@@ -59,9 +60,6 @@
 #include "bcomdef.h"
 #include "peripheral.h"
 #include "simple_peripheral.h"
-#include "adcsinglechannel.h"
-
-/* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
 #include <driverlib/vims.h>
 
