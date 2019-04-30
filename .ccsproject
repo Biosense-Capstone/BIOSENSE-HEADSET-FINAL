@@ -11,7 +11,7 @@
 	<rts value="libc.a"/>
 	<createSlaveProjects value=""/>
 	<templateProperties value="id=simple_peripheral_cc1350lp_app_FlashROM.projectspec.simple_peripheral_cc1350lp_app_FlashROM,type=rtsc,products=com.ti.SIMPLELINK_CC13X0_SDK:2_30_00_20,xdcToolsVersion=3.50.08.24.core,target=ti.targets.arm.elf.M3,platform=ti.platforms.simplelink:CC1350F128,buildProfile=release,isHybrid=true,configuroOptions=--compileOptions &quot;${COMPILER_FLAGS} &quot; "/>
-	<origin value="/home/keenan/ti/simplelink_cc13x0_sdk_2_30_00_20/examples/rtos/CC1350_LAUNCHXL/blestack/simple_peripheral/tirtos/ccs/simple_peripheral_cc1350lp_app_FlashROM.projectspec"/>
+	<origin value="C:/Users/zacas/Documents/Capstone/BIOSENSE-HEADSET-FINAL"/>
 	<filesToOpen value=""/>
 	<isTargetManual value="false"/>
 </projectOptions>
