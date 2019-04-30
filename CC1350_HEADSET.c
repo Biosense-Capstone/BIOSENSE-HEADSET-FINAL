@@ -31,9 +31,9 @@
  */
 
 /*
- *  ============================ CC1350_BIOSENSE_HEADBAND.c ============================
+ *  ============================ CC1350_HEADSET.c ============================
  *  This file is responsible for setting up the board specific items for the
- *  CC1350_BIOSENSE_HEADBAND board.
+ *  CC1350_HEADSET board.
  */
 
 #include <stdbool.h>
@@ -45,8 +45,7 @@
 #include <ti/devices/cc13x0/inc/hw_ints.h>
 #include <ti/devices/cc13x0/inc/hw_memmap.h>
 
-#include "CC1350_BIOSENSE_HEADBAND.h"
-
+#include "CC1350_HEADSET.h"
 
 /*
  *  =============================== ADCBuf ===============================
@@ -54,7 +53,7 @@
 #include <ti/drivers/ADCBuf.h>
 #include <ti/drivers/adcbuf/ADCBufCC26XX.h>
 
-ADCBufCC26XX_Object adcBufCC26XXobjects[CC1350_BIOSENSE_HEADBAND_ADCBUFCOUNT];
+ADCBufCC26XX_Object adcBufCC26XXobjects[CC1350_HEADSET_ADCBUFCOUNT];
 
 /*
  *  This table converts a virtual adc channel into a dio and internal analogue
@@ -63,37 +62,39 @@ ADCBufCC26XX_Object adcBufCC26XXobjects[CC1350_BIOSENSE_HEADBAND_ADCBUFCOUNT];
  *  pairs are hardwired. Do not remap them in the table. You may reorder entire
  *  entries. The mapping of dio and internal signals is package dependent.
  */
-const ADCBufCC26XX_AdcChannelLutEntry ADCBufCC26XX_adcChannelLut[CC1350_BIOSENSE_HEADBAND_ADCBUF0CHANNELCOUNT] = {
-    {CC1350_BIOSENSE_HEADBAND_DIO28_ANALOG, ADC_COMPB_IN_AUXIO2},
-    {CC1350_BIOSENSE_HEADBAND_DIO29_ANALOG, ADC_COMPB_IN_AUXIO1},
-    {CC1350_BIOSENSE_HEADBAND_DIO23_ANALOG, ADC_COMPB_IN_AUXIO7},
-    {CC1350_BIOSENSE_HEADBAND_DIO24_ANALOG, ADC_COMPB_IN_AUXIO6},
-    {CC1350_BIOSENSE_HEADBAND_DIO25_ANALOG, ADC_COMPB_IN_AUXIO5},
-    {CC1350_BIOSENSE_HEADBAND_DIO26_ANALOG, ADC_COMPB_IN_AUXIO4},
-    {CC1350_BIOSENSE_HEADBAND_DIO27_ANALOG, ADC_COMPB_IN_AUXIO3},
-    {CC1350_BIOSENSE_HEADBAND_DIO30_ANALOG, ADC_COMPB_IN_AUXIO0},
+const ADCBufCC26XX_AdcChannelLutEntry ADCBufCC26XX_adcChannelLut[CC1350_HEADSET_ADCBUF0CHANNELCOUNT] = {
+    {CC1350_HEADSET_DIO23_ANALOG, ADC_COMPB_IN_AUXIO7},
+    {CC1350_HEADSET_DIO24_ANALOG, ADC_COMPB_IN_AUXIO6},
+    {CC1350_HEADSET_DIO25_ANALOG, ADC_COMPB_IN_AUXIO5},
+    {CC1350_HEADSET_DIO26_ANALOG, ADC_COMPB_IN_AUXIO4},
+    {CC1350_HEADSET_DIO27_ANALOG, ADC_COMPB_IN_AUXIO3},
+    {CC1350_HEADSET_DIO28_ANALOG, ADC_COMPB_IN_AUXIO2},
+    {CC1350_HEADSET_DIO29_ANALOG, ADC_COMPB_IN_AUXIO1},
+    {CC1350_HEADSET_DIO30_ANALOG, ADC_COMPB_IN_AUXIO0},
     {PIN_UNASSIGNED, ADC_COMPB_IN_VDDS},
     {PIN_UNASSIGNED, ADC_COMPB_IN_DCOUPL},
     {PIN_UNASSIGNED, ADC_COMPB_IN_VSS},
 };
 
-const ADCBufCC26XX_HWAttrs adcBufCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCBUFCOUNT] = {
+const ADCBufCC26XX_HWAttrs adcBufCC26XXHWAttrs[CC1350_HEADSET_ADCBUFCOUNT] = {
     {
         .intPriority       = ~0,
         .swiPriority       = 0,
         .adcChannelLut     = ADCBufCC26XX_adcChannelLut,
+        .gpTimerUnit       = CC1350_HEADSET_GPTIMER0A,
+        .gptDMAChannelMask = 1 << UDMA_CHAN_TIMER0_A,
     }
 };
 
-const ADCBuf_Config ADCBuf_config[CC1350_BIOSENSE_HEADBAND_ADCBUFCOUNT] = {
+const ADCBuf_Config ADCBuf_config[CC1350_HEADSET_ADCBUFCOUNT] = {
     {
         &ADCBufCC26XX_fxnTable,
-        &adcBufCC26XXobjects[CC1350_BIOSENSE_HEADBAND_ADCBUF0],
-        &adcBufCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCBUF0]
+        &adcBufCC26XXobjects[CC1350_HEADSET_ADCBUF0],
+        &adcBufCC26XXHWAttrs[CC1350_HEADSET_ADCBUF0]
     },
 };
 
-const uint_least8_t ADCBuf_count = CC1350_BIOSENSE_HEADBAND_ADCBUFCOUNT;
+const uint_least8_t ADCBuf_count = CC1350_HEADSET_ADCBUFCOUNT;
 
 /*
  *  =============================== ADC ===============================
@@ -101,29 +102,11 @@ const uint_least8_t ADCBuf_count = CC1350_BIOSENSE_HEADBAND_ADCBUFCOUNT;
 #include <ti/drivers/ADC.h>
 #include <ti/drivers/adc/ADCCC26XX.h>
 
-ADCCC26XX_Object adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADCCOUNT];
+ADCCC26XX_Object adcCC26xxObjects[CC1350_HEADSET_ADCCOUNT];
 
-const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
-       {
-           .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO28_ANALOG,
-           .adcCompBInput       = ADC_COMPB_IN_AUXIO2,
-           .refSource           = ADCCC26XX_FIXED_REFERENCE,
-           .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
-           .inputScalingEnabled = true,
-           .triggerSource       = ADCCC26XX_TRIGGER_MANUAL,
-           .returnAdjustedVal   = false
-       },
-       {
-           .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO29_ANALOG,
-           .adcCompBInput       = ADC_COMPB_IN_AUXIO1,
-           .refSource           = ADCCC26XX_FIXED_REFERENCE,
-           .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
-           .inputScalingEnabled = true,
-           .triggerSource       = ADCCC26XX_TRIGGER_MANUAL,
-           .returnAdjustedVal   = false
-       },
+const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_HEADSET_ADCCOUNT] = {
     {
-        .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO23_ANALOG,
+        .adcDIO              = CC1350_HEADSET_DIO23_ANALOG,
         .adcCompBInput       = ADC_COMPB_IN_AUXIO7,
         .refSource           = ADCCC26XX_FIXED_REFERENCE,
         .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
@@ -132,7 +115,7 @@ const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
         .returnAdjustedVal   = false
     },
     {
-        .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO24_ANALOG,
+        .adcDIO              = CC1350_HEADSET_DIO24_ANALOG,
         .adcCompBInput       = ADC_COMPB_IN_AUXIO6,
         .refSource           = ADCCC26XX_FIXED_REFERENCE,
         .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
@@ -141,7 +124,7 @@ const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
         .returnAdjustedVal   = false
     },
     {
-        .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO25_ANALOG,
+        .adcDIO              = CC1350_HEADSET_DIO25_ANALOG,
         .adcCompBInput       = ADC_COMPB_IN_AUXIO5,
         .refSource           = ADCCC26XX_FIXED_REFERENCE,
         .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
@@ -150,7 +133,7 @@ const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
         .returnAdjustedVal   = false
     },
     {
-        .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO26_ANALOG,
+        .adcDIO              = CC1350_HEADSET_DIO26_ANALOG,
         .adcCompBInput       = ADC_COMPB_IN_AUXIO4,
         .refSource           = ADCCC26XX_FIXED_REFERENCE,
         .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
@@ -159,7 +142,7 @@ const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
         .returnAdjustedVal   = false
     },
     {
-        .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO27_ANALOG,
+        .adcDIO              = CC1350_HEADSET_DIO27_ANALOG,
         .adcCompBInput       = ADC_COMPB_IN_AUXIO3,
         .refSource           = ADCCC26XX_FIXED_REFERENCE,
         .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
@@ -168,7 +151,25 @@ const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
         .returnAdjustedVal   = false
     },
     {
-        .adcDIO              = CC1350_BIOSENSE_HEADBAND_DIO30_ANALOG,
+        .adcDIO              = CC1350_HEADSET_DIO28_ANALOG,
+        .adcCompBInput       = ADC_COMPB_IN_AUXIO2,
+        .refSource           = ADCCC26XX_FIXED_REFERENCE,
+        .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
+        .inputScalingEnabled = true,
+        .triggerSource       = ADCCC26XX_TRIGGER_MANUAL,
+        .returnAdjustedVal   = false
+    },
+    {
+        .adcDIO              = CC1350_HEADSET_DIO29_ANALOG,
+        .adcCompBInput       = ADC_COMPB_IN_AUXIO1,
+        .refSource           = ADCCC26XX_FIXED_REFERENCE,
+        .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_2P7_US,
+        .inputScalingEnabled = true,
+        .triggerSource       = ADCCC26XX_TRIGGER_MANUAL,
+        .returnAdjustedVal   = false
+    },
+    {
+        .adcDIO              = CC1350_HEADSET_DIO30_ANALOG,
         .adcCompBInput       = ADC_COMPB_IN_AUXIO0,
         .refSource           = ADCCC26XX_FIXED_REFERENCE,
         .samplingDuration    = ADCCC26XX_SAMPLING_DURATION_10P9_MS,
@@ -205,30 +206,30 @@ const ADCCC26XX_HWAttrs adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
     }
 };
 
-const ADC_Config ADC_config[CC1350_BIOSENSE_HEADBAND_ADCCOUNT] = {
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC0], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC0]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC1], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC1]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC2], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC2]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC3], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC3]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC4], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC4]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC5], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC5]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC6], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC6]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADC7], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADC7]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADCDCOUPL], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCDCOUPL]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADCVSS], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCVSS]},
-    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_BIOSENSE_HEADBAND_ADCVDDS], &adcCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_ADCVDDS]},
+const ADC_Config ADC_config[CC1350_HEADSET_ADCCOUNT] = {
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC0], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC0]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC1], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC1]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC2], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC2]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC3], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC3]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC4], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC4]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC5], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC5]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC6], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC6]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADC7], &adcCC26xxHWAttrs[CC1350_HEADSET_ADC7]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADCDCOUPL], &adcCC26xxHWAttrs[CC1350_HEADSET_ADCDCOUPL]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADCVSS], &adcCC26xxHWAttrs[CC1350_HEADSET_ADCVSS]},
+    {&ADCCC26XX_fxnTable, &adcCC26xxObjects[CC1350_HEADSET_ADCVDDS], &adcCC26xxHWAttrs[CC1350_HEADSET_ADCVDDS]},
 };
 
-const uint_least8_t ADC_count = CC1350_BIOSENSE_HEADBAND_ADCCOUNT;
+const uint_least8_t ADC_count = CC1350_HEADSET_ADCCOUNT;
 
 /*
  *  =============================== Crypto ===============================
  */
 #include <ti/drivers/crypto/CryptoCC26XX.h>
 
-CryptoCC26XX_Object cryptoCC26XXObjects[CC1350_BIOSENSE_HEADBAND_CRYPTOCOUNT];
+CryptoCC26XX_Object cryptoCC26XXObjects[CC1350_HEADSET_CRYPTOCOUNT];
 
-const CryptoCC26XX_HWAttrs cryptoCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_CRYPTOCOUNT] = {
+const CryptoCC26XX_HWAttrs cryptoCC26XXHWAttrs[CC1350_HEADSET_CRYPTOCOUNT] = {
     {
         .baseAddr       = CRYPTO_BASE,
         .powerMngrId    = PowerCC26XX_PERIPH_CRYPTO,
@@ -237,10 +238,10 @@ const CryptoCC26XX_HWAttrs cryptoCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_CRYPTOCO
     }
 };
 
-const CryptoCC26XX_Config CryptoCC26XX_config[CC1350_BIOSENSE_HEADBAND_CRYPTOCOUNT] = {
+const CryptoCC26XX_Config CryptoCC26XX_config[CC1350_HEADSET_CRYPTOCOUNT] = {
     {
-         .object  = &cryptoCC26XXObjects[CC1350_BIOSENSE_HEADBAND_CRYPTO0],
-         .hwAttrs = &cryptoCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_CRYPTO0]
+         .object  = &cryptoCC26XXObjects[CC1350_HEADSET_CRYPTO0],
+         .hwAttrs = &cryptoCC26XXHWAttrs[CC1350_HEADSET_CRYPTO0]
     },
 };
 
@@ -249,26 +250,24 @@ const CryptoCC26XX_Config CryptoCC26XX_config[CC1350_BIOSENSE_HEADBAND_CRYPTOCOU
  */
 #include <ti/drivers/TRNG.h>
 #include <ti/drivers/trng/TRNGCC26X0.h>
-#include <ti/blestack/hal/src/target/_common/TRNGCC26XX.h>
 
-TRNGCC26X0_Object trngCC26X2Objects[CC1350_BIOSENSE_HEADBAND_TRNGCOUNT];
+TRNGCC26X0_Object trngCC26X2Objects[CC1350_HEADSET_TRNGCOUNT];
 
-const TRNGCC26X0_HWAttrs trngCC26X2HWAttrs[CC1350_BIOSENSE_HEADBAND_TRNGCOUNT] = {
+const TRNGCC26X0_HWAttrs trngCC26X2HWAttrs[CC1350_HEADSET_TRNGCOUNT] = {
     {
         .intPriority       = ~0,
         .swiPriority       = 0,
-        .samplesPerCycle   = 240000,
     }
 };
 
-const TRNGCC26XX_Config TRNGCC26XX_config[CC1350_BIOSENSE_HEADBAND_TRNGCOUNT] = {
+const TRNG_Config TRNGCC26XX_config[CC1350_HEADSET_TRNGCOUNT] = {
     {
-         .object  = &trngCC26X2Objects[CC1350_BIOSENSE_HEADBAND_TRNG0],
-         .hwAttrs = &trngCC26X2HWAttrs[CC1350_BIOSENSE_HEADBAND_TRNG0]
+         .object  = &trngCC26X2Objects[CC1350_HEADSET_TRNG0],
+         .hwAttrs = &trngCC26X2HWAttrs[CC1350_HEADSET_TRNG0]
     },
 };
 
-const uint_least8_t TRNG_count = CC1350_BIOSENSE_HEADBAND_TRNGCOUNT;
+const uint_least8_t TRNG_count = CC1350_HEADSET_TRNGCOUNT;
 
 /*
  *  =============================== Display ===============================
@@ -288,25 +287,25 @@ DisplayUart_Object     displayUartObject;
 DisplaySharp_Object    displaySharpObject;
 
 static char uartStringBuf[BOARD_DISPLAY_UART_STRBUF_SIZE];
-static uint_least8_t sharpDisplayBuf[BOARD_DISPLAY_SHARP_SIZE * BOARD_DISPLAY_SHARP_SIZE / 8];
+//static uint_least8_t sharpDisplayBuf[BOARD_DISPLAY_SHARP_SIZE * BOARD_DISPLAY_SHARP_SIZE / 8];
 
 const DisplayUart_HWAttrs displayUartHWAttrs = {
-    .uartIdx      = CC1350_BIOSENSE_HEADBAND_UART0,
+    .uartIdx      = CC1350_HEADSET_UART0,
     .baudRate     = 115200,
     .mutexTimeout = (unsigned int)(-1),
     .strBuf       = uartStringBuf,
     .strBufLen    = BOARD_DISPLAY_UART_STRBUF_SIZE,
 };
-
+/*
 const DisplaySharp_HWAttrsV1 displaySharpHWattrs = {
-    .spiIndex    = CC1350_BIOSENSE_HEADBAND_SPI0,
-    .csPin       = CC1350_BIOSENSE_HEADBAND_GPIO_LCD_CS,
-    .powerPin    = CC1350_BIOSENSE_HEADBAND_GPIO_LCD_POWER,
-    .enablePin   = CC1350_BIOSENSE_HEADBAND_GPIO_LCD_ENABLE,
+    .spiIndex    = CC1350_HEADSET_SPI0,
+    .csPin       = CC1350_HEADSET_GPIO_LCD_CS,
+    .powerPin    = CC1350_HEADSET_GPIO_LCD_POWER,
+    .enablePin   = CC1350_HEADSET_GPIO_LCD_ENABLE,
     .pixelWidth  = BOARD_DISPLAY_SHARP_SIZE,
     .pixelHeight = BOARD_DISPLAY_SHARP_SIZE,
     .displayBuf  = sharpDisplayBuf,
-};
+};*/
 
 #ifndef BOARD_DISPLAY_USE_UART
 #define BOARD_DISPLAY_USE_UART 1
@@ -364,48 +363,37 @@ const uint_least8_t Display_count = 0;
 /*
  * Array of Pin configurations
  * NOTE: The order of the pin configurations must coincide with what was
- *       defined in CC1350_BIOSENSE_HEADBAND.h
+ *       defined in CC1350_HEADSET.h
  * NOTE: Pins not used for interrupts should be placed at the end of the
  *       array.  Callback entries can be omitted from callbacks array to
  *       reduce memory usage.
  */
 GPIO_PinConfig gpioPinConfigs[] = {
     /* Input pins */
-    GPIOCC26XX_DIO_13 | GPIO_DO_NOT_CONFIG,  /* Button 0 */
-    GPIOCC26XX_DIO_14 | GPIO_DO_NOT_CONFIG,  /* Button 1 */
+    CC1350_HEADSET_DC_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_TFTCS_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_MPU_CS_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_BMP_CS_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_TFTRST_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_MPU_SYNC_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_MPU_INT_PIN | GPIO_DO_NOT_CONFIG,
+    CC1350_HEADSET_GLED_PIN | GPIO_DO_NOT_CONFIG,
 
-    GPIOCC26XX_DIO_15 | GPIO_DO_NOT_CONFIG,  /* CC1350_BIOSENSE_HEADBAND_SPI_MASTER_READY */
-    GPIOCC26XX_DIO_21 | GPIO_DO_NOT_CONFIG,  /* CC1350_BIOSENSE_HEADBAND_SPI_SLAVE_READY */
-
-    /* Output pins */
-    CC1350_BIOSENSE_HEADBAND_PIN_GLED | GPIO_DO_NOT_CONFIG,  /* Green LED */
-    CC1350_BIOSENSE_HEADBAND_PIN_RLED | GPIO_DO_NOT_CONFIG,  /* Red LED */
-
-    /* SPI Flash CSN */
-    GPIOCC26XX_DIO_20 | GPIO_DO_NOT_CONFIG,
-
-    /* SD CS */
-    GPIOCC26XX_DIO_21 | GPIO_DO_NOT_CONFIG,
-
-    /* Sharp Display - GPIO configurations will be done in the Display files */
-    GPIOCC26XX_DIO_24 | GPIO_DO_NOT_CONFIG, /* SPI chip select */
-    GPIOCC26XX_DIO_22 | GPIO_DO_NOT_CONFIG, /* LCD power control */
-    GPIOCC26XX_DIO_23 | GPIO_DO_NOT_CONFIG, /*LCD enable */
 
 };
 
 /*
  * Array of callback function pointers
  * NOTE: The order of the pin configurations must coincide with what was
- *       defined in CC1350_BIOSENSE_HEADBAND.h
+ *       defined in CC1350_HEADSET.h
  * NOTE: Pins not used for interrupts can be omitted from callbacks array to
  *       reduce memory usage (if placed at end of gpioPinConfigs array).
  */
 GPIO_CallbackFxn gpioCallbackFunctions[] = {
     NULL,  /*  Button 0 */
     NULL,  /*  Button 1 */
-    NULL,  /* CC1350_BIOSENSE_HEADBAND_SPI_MASTER_READY */
-    NULL,  /* CC1350_BIOSENSE_HEADBAND_SPI_SLAVE_READY */
+    NULL,  /* CC1350_HEADSET_SPI_MASTER_READY */
+    NULL,  /* CC1350_HEADSET_SPI_SLAVE_READY */
 };
 
 const GPIOCC26XX_Config GPIOCC26XX_config = {
@@ -422,9 +410,9 @@ const GPIOCC26XX_Config GPIOCC26XX_config = {
  */
 #include <ti/drivers/timer/GPTimerCC26XX.h>
 
-GPTimerCC26XX_Object gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMERCOUNT];
+GPTimerCC26XX_Object gptimerCC26XXObjects[CC1350_HEADSET_GPTIMERCOUNT];
 
-const GPTimerCC26XX_HWAttrs gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMERPARTSCOUNT] = {
+const GPTimerCC26XX_HWAttrs gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMERPARTSCOUNT] = {
     { .baseAddr = GPT0_BASE, .intNum = INT_GPT0A, .intPriority = (~0), .powerMngrId = PowerCC26XX_PERIPH_GPT0, .pinMux = GPT_PIN_0A, },
     { .baseAddr = GPT0_BASE, .intNum = INT_GPT0B, .intPriority = (~0), .powerMngrId = PowerCC26XX_PERIPH_GPT0, .pinMux = GPT_PIN_0B, },
     { .baseAddr = GPT1_BASE, .intNum = INT_GPT1A, .intPriority = (~0), .powerMngrId = PowerCC26XX_PERIPH_GPT1, .pinMux = GPT_PIN_1A, },
@@ -435,15 +423,15 @@ const GPTimerCC26XX_HWAttrs gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIME
     { .baseAddr = GPT3_BASE, .intNum = INT_GPT3B, .intPriority = (~0), .powerMngrId = PowerCC26XX_PERIPH_GPT3, .pinMux = GPT_PIN_3B, },
 };
 
-const GPTimerCC26XX_Config GPTimerCC26XX_config[CC1350_BIOSENSE_HEADBAND_GPTIMERPARTSCOUNT] = {
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER0], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER0A], GPT_A },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER0], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER0B], GPT_B },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER1], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER1A], GPT_A },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER1], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER1B], GPT_B },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER2], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER2A], GPT_A },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER2], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER2B], GPT_B },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER3], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER3A], GPT_A },
-    { &gptimerCC26XXObjects[CC1350_BIOSENSE_HEADBAND_GPTIMER3], &gptimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_GPTIMER3B], GPT_B },
+const GPTimerCC26XX_Config GPTimerCC26XX_config[CC1350_HEADSET_GPTIMERPARTSCOUNT] = {
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER0], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER0A], GPT_A },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER0], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER0B], GPT_B },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER1], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER1A], GPT_A },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER1], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER1B], GPT_B },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER2], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER2A], GPT_A },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER2], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER2B], GPT_B },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER3], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER3A], GPT_A },
+    { &gptimerCC26XXObjects[CC1350_HEADSET_GPTIMER3], &gptimerCC26xxHWAttrs[CC1350_HEADSET_GPTIMER3B], GPT_B },
 };
 
 /*
@@ -452,29 +440,29 @@ const GPTimerCC26XX_Config GPTimerCC26XX_config[CC1350_BIOSENSE_HEADBAND_GPTIMER
 #include <ti/drivers/I2C.h>
 #include <ti/drivers/i2c/I2CCC26XX.h>
 
-I2CCC26XX_Object i2cCC26xxObjects[CC1350_BIOSENSE_HEADBAND_I2CCOUNT];
+I2CCC26XX_Object i2cCC26xxObjects[CC1350_HEADSET_I2CCOUNT];
 
-const I2CCC26XX_HWAttrsV1 i2cCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_I2CCOUNT] = {
+const I2CCC26XX_HWAttrsV1 i2cCC26xxHWAttrs[CC1350_HEADSET_I2CCOUNT] = {
     {
         .baseAddr    = I2C0_BASE,
         .powerMngrId = PowerCC26XX_PERIPH_I2C0,
         .intNum      = INT_I2C_IRQ,
         .intPriority = ~0,
         .swiPriority = 0,
-        .sdaPin      = CC1350_BIOSENSE_HEADBAND_I2C0_SDA0,
-        .sclPin      = CC1350_BIOSENSE_HEADBAND_I2C0_SCL0,
+        .sdaPin      = CC1350_HEADSET_I2C0_SDA0,
+        .sclPin      = CC1350_HEADSET_I2C0_SCL0,
     }
 };
 
-const I2C_Config I2C_config[CC1350_BIOSENSE_HEADBAND_I2CCOUNT] = {
+const I2C_Config I2C_config[CC1350_HEADSET_I2CCOUNT] = {
     {
         .fxnTablePtr = &I2CCC26XX_fxnTable,
-        .object      = &i2cCC26xxObjects[CC1350_BIOSENSE_HEADBAND_I2C0],
-        .hwAttrs     = &i2cCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_I2C0]
+        .object      = &i2cCC26xxObjects[CC1350_HEADSET_I2C0],
+        .hwAttrs     = &i2cCC26xxHWAttrs[CC1350_HEADSET_I2C0]
     },
 };
 
-const uint_least8_t I2C_count = CC1350_BIOSENSE_HEADBAND_I2CCOUNT;
+const uint_least8_t I2C_count = CC1350_HEADSET_I2CCOUNT;
 
 /*
  *  =============================== NVS ===============================
@@ -545,13 +533,13 @@ const NVSCC26XX_HWAttrs nvsCC26xxHWAttrs[1] = {
 #define SPIREGIONSIZE    (SPISECTORSIZE * 32)
 #define VERIFYBUFSIZE    64
 
-static uint8_t verifyBuf[VERIFYBUFSIZE];
+
 
 /* Allocate objects for NVS External Regions */
 NVSSPI25X_Object nvsSPI25XObjects[1];
 
 /* Hardware attributes for NVS External Regions */
-const NVSSPI25X_HWAttrs nvsSPI25XHWAttrs[1] = {
+/*const NVSSPI25X_HWAttrs nvsSPI25XHWAttrs[1] = {
     {
         .regionBaseOffset = 0,
         .regionSize = SPIREGIONSIZE,
@@ -561,14 +549,15 @@ const NVSSPI25X_HWAttrs nvsSPI25XHWAttrs[1] = {
         .spiHandle = NULL,
         .spiIndex = 0,
         .spiBitRate = 4000000,
-        .spiCsnGpioIndex = CC1350_BIOSENSE_HEADBAND_GPIO_SPI_FLASH_CS,
+        .spiCsnGpioIndex = CC1350_HEADSET_GPIO_SPI_FLASH_CS,
     },
-};
+};*/
 
 #endif /* Board_EXCLUDE_NVS_EXTERNAL_FLASH */
 
 /* NVS Region index 0 and 1 refer to NVS and NVS SPI respectively */
-const NVS_Config NVS_config[CC1350_BIOSENSE_HEADBAND_NVSCOUNT] = {
+/*
+const NVS_Config NVS_config[CC1350_HEADSET_NVSCOUNT] = {
 #ifndef Board_EXCLUDE_NVS_INTERNAL_FLASH
     {
         .fxnTablePtr = &NVSCC26XX_fxnTable,
@@ -583,9 +572,9 @@ const NVS_Config NVS_config[CC1350_BIOSENSE_HEADBAND_NVSCOUNT] = {
         .hwAttrs = &nvsSPI25XHWAttrs[0],
     },
 #endif
-};
+};*/
 
-const uint_least8_t NVS_count = CC1350_BIOSENSE_HEADBAND_NVSCOUNT;
+//const uint_least8_t NVS_count = CC1350_HEADSET_NVSCOUNT;
 
 /*
  *  =============================== PIN ===============================
@@ -594,7 +583,23 @@ const uint_least8_t NVS_count = CC1350_BIOSENSE_HEADBAND_NVSCOUNT;
 #include <ti/drivers/pin/PINCC26XX.h>
 
 const PIN_Config BoardGpioInitTable[] = {
-    CC1350_BIOSENSE_HEADBAND_PIN_RLED | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,          /* LED initially off             */
+
+    CC1350_HEADSET_DC_PIN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MIN,
+    CC1350_HEADSET_TFTCS_PIN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MIN,
+    CC1350_HEADSET_MPU_CS_PIN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MIN,
+    CC1350_HEADSET_BMP_CS_PIN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MIN,
+    CC1350_HEADSET_TFTRST_PIN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MIN,
+    CC1350_HEADSET_MPU_SYNC_PIN | PIN_INPUT_EN | PIN_PULLUP | PIN_IRQ_BOTHEDGES | PIN_HYSTERESIS,
+    CC1350_HEADSET_MPU_INT_PIN | PIN_INPUT_EN | PIN_PULLUP | PIN_IRQ_BOTHEDGES | PIN_HYSTERESIS,
+    CC1350_HEADSET_GLED_PIN | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+
+    CC1350_HEADSET_UART_RX | PIN_INPUT_EN | PIN_PULLDOWN,                                                 /* UART RX via debugger back channel */
+    CC1350_HEADSET_UART_TX | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL,                           /* UART TX via debugger back channel */
+    CC1350_HEADSET_DIO1_RF_SUB1GHZ   | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX, /* RF SW Switch defaults to 2.4 GHz path*/
+    CC1350_HEADSET_DIO30_RF_POWER | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,    /* External RF Switch is powered off by default */
+    CC1350_HEADSET_SPI0_MOSI | PIN_INPUT_EN | PIN_PULLDOWN,                                               /* SPI master out - slave in */
+    CC1350_HEADSET_SPI0_MISO | PIN_INPUT_EN | PIN_PULLDOWN,                                               /* SPI master in - slave out */
+    CC1350_HEADSET_SPI0_CLK | PIN_INPUT_EN | PIN_PULLDOWN,                                                /* SPI clock */
     PIN_TERMINATE
 };
 
@@ -625,31 +630,31 @@ const PowerCC26XX_Config PowerCC26XX_config = {
 #include <ti/drivers/PWM.h>
 #include <ti/drivers/pwm/PWMTimerCC26XX.h>
 
-PWMTimerCC26XX_Object pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWMCOUNT];
+PWMTimerCC26XX_Object pwmtimerCC26xxObjects[CC1350_HEADSET_PWMCOUNT];
 
-const PWMTimerCC26XX_HwAttrs pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWMCOUNT] = {
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN0, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER0A },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN1, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER0B },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN2, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER1A },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN3, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER1B },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN4, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER2A },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN5, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER2B },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN6, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER3A },
-    { .pwmPin = CC1350_BIOSENSE_HEADBAND_PWMPIN7, .gpTimerUnit = CC1350_BIOSENSE_HEADBAND_GPTIMER3B },
+const PWMTimerCC26XX_HwAttrs pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWMCOUNT] = {
+    { .pwmPin = CC1350_HEADSET_PWMPIN0, .gpTimerUnit = CC1350_HEADSET_GPTIMER0A },
+    { .pwmPin = CC1350_HEADSET_PWMPIN1, .gpTimerUnit = CC1350_HEADSET_GPTIMER0B },
+    { .pwmPin = CC1350_HEADSET_PWMPIN2, .gpTimerUnit = CC1350_HEADSET_GPTIMER1A },
+    { .pwmPin = CC1350_HEADSET_PWMPIN3, .gpTimerUnit = CC1350_HEADSET_GPTIMER1B },
+    { .pwmPin = CC1350_HEADSET_PWMPIN4, .gpTimerUnit = CC1350_HEADSET_GPTIMER2A },
+    { .pwmPin = CC1350_HEADSET_PWMPIN5, .gpTimerUnit = CC1350_HEADSET_GPTIMER2B },
+    { .pwmPin = CC1350_HEADSET_PWMPIN6, .gpTimerUnit = CC1350_HEADSET_GPTIMER3A },
+    { .pwmPin = CC1350_HEADSET_PWMPIN7, .gpTimerUnit = CC1350_HEADSET_GPTIMER3B },
 };
 
-const PWM_Config PWM_config[CC1350_BIOSENSE_HEADBAND_PWMCOUNT] = {
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM0], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM0] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM1], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM1] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM2], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM2] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM3], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM3] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM4], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM4] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM5], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM5] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM6], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM6] },
-    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_BIOSENSE_HEADBAND_PWM7], &pwmtimerCC26xxHWAttrs[CC1350_BIOSENSE_HEADBAND_PWM7] },
+const PWM_Config PWM_config[CC1350_HEADSET_PWMCOUNT] = {
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM0], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM0] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM1], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM1] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM2], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM2] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM3], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM3] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM4], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM4] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM5], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM5] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM6], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM6] },
+    { &PWMTimerCC26XX_fxnTable, &pwmtimerCC26xxObjects[CC1350_HEADSET_PWM7], &pwmtimerCC26xxHWAttrs[CC1350_HEADSET_PWM7] },
 };
 
-const uint_least8_t PWM_count = CC1350_BIOSENSE_HEADBAND_PWMCOUNT;
+const uint_least8_t PWM_count = CC1350_HEADSET_PWMCOUNT;
 
 /*
  *  =============================== RF Driver ===============================
@@ -661,7 +666,7 @@ const uint_least8_t PWM_count = CC1350_BIOSENSE_HEADBAND_PWMCOUNT;
  *
  *  This function is called by the RF driver on global driver events.
  *  It contains a default implementation to set the correct antenna path.
- *  This function is defined in the file CC1350_BIOSENSE_HEADBAND_fxns.c
+ *  This function is defined in the file CC1350_HEADSET_fxns.c
  */
 extern void rfDriverCallback(RF_Handle client, RF_GlobalEvent events, void *arg);
 
@@ -682,24 +687,24 @@ const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
 #include <ti/drivers/SD.h>
 #include <ti/drivers/sd/SDSPI.h>
 
-SDSPI_Object sdspiObjects[CC1350_BIOSENSE_HEADBAND_SDCOUNT];
+SDSPI_Object sdspiObjects[CC1350_HEADSET_SDCOUNT];
 
-const SDSPI_HWAttrs sdspiHWAttrs[CC1350_BIOSENSE_HEADBAND_SDCOUNT] = {
+/*const SDSPI_HWAttrs sdspiHWAttrs[CC1350_HEADSET_SDCOUNT] = {
     {
-        .spiIndex = CC1350_BIOSENSE_HEADBAND_SPI0,
-        .spiCsGpioIndex = CC1350_BIOSENSE_HEADBAND_SDSPI_CS
+        .spiIndex = CC1350_HEADSET_SPI0,
+        .spiCsGpioIndex = CC1350_HEADSET_SDSPI_CS
     }
 };
 
-const SD_Config SD_config[CC1350_BIOSENSE_HEADBAND_SDCOUNT] = {
+const SD_Config SD_config[CC1350_HEADSET_SDCOUNT] = {
     {
         .fxnTablePtr = &SDSPI_fxnTable,
-        .object = &sdspiObjects[CC1350_BIOSENSE_HEADBAND_SDSPI0],
-        .hwAttrs = &sdspiHWAttrs[CC1350_BIOSENSE_HEADBAND_SDSPI0]
+        .object = &sdspiObjects[CC1350_HEADSET_SDSPI0],
+        .hwAttrs = &sdspiHWAttrs[CC1350_HEADSET_SDSPI0]
     },
 };
 
-const uint_least8_t SD_count = CC1350_BIOSENSE_HEADBAND_SDCOUNT;
+const uint_least8_t SD_count = CC1350_HEADSET_SDCOUNT;*/
 
 /*
  *  =============================== SPI DMA ===============================
@@ -707,14 +712,14 @@ const uint_least8_t SD_count = CC1350_BIOSENSE_HEADBAND_SDCOUNT;
 #include <ti/drivers/SPI.h>
 #include <ti/drivers/spi/SPICC26XXDMA.h>
 
-SPICC26XXDMA_Object spiCC26XXDMAObjects[CC1350_BIOSENSE_HEADBAND_SPICOUNT];
+SPICC26XXDMA_Object spiCC26XXDMAObjects[CC1350_HEADSET_SPICOUNT];
 
 /*
  * NOTE: The SPI instances below can be used by the SD driver to communicate
  * with a SD card via SPI.  The 'defaultTxBufValue' fields below are set to 0xFF
  * to satisfy the SDSPI driver requirement.
  */
-const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC1350_BIOSENSE_HEADBAND_SPICOUNT] = {
+const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC1350_HEADSET_SPICOUNT] = {
     {
         .baseAddr           = SSI0_BASE,
         .intNum             = INT_SSI0_COMB,
@@ -724,10 +729,10 @@ const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC1350_BIOSENSE_HEADBAND_SPICOU
         .defaultTxBufValue  = 0xFF,
         .rxChannelBitMask   = 1<<UDMA_CHAN_SSI0_RX,
         .txChannelBitMask   = 1<<UDMA_CHAN_SSI0_TX,
-        .mosiPin            = CC1350_BIOSENSE_HEADBAND_SPI0_MOSI,
-        .misoPin            = CC1350_BIOSENSE_HEADBAND_SPI0_MISO,
-        .clkPin             = CC1350_BIOSENSE_HEADBAND_SPI0_CLK,
-        .csnPin             = CC1350_BIOSENSE_HEADBAND_SPI0_CSN,
+        .mosiPin            = CC1350_HEADSET_SPI0_MOSI,
+        .misoPin            = CC1350_HEADSET_SPI0_MISO,
+        .clkPin             = CC1350_HEADSET_SPI0_CLK,
+        .csnPin             = CC1350_HEADSET_SPI0_CSN,
         .minDmaTransferSize = 10
     },
     {
@@ -739,28 +744,28 @@ const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC1350_BIOSENSE_HEADBAND_SPICOU
         .defaultTxBufValue  = 0xFF,
         .rxChannelBitMask   = 1<<UDMA_CHAN_SSI1_RX,
         .txChannelBitMask   = 1<<UDMA_CHAN_SSI1_TX,
-        .mosiPin            = CC1350_BIOSENSE_HEADBAND_SPI1_MOSI,
-        .misoPin            = CC1350_BIOSENSE_HEADBAND_SPI1_MISO,
-        .clkPin             = CC1350_BIOSENSE_HEADBAND_SPI1_CLK,
-        .csnPin             = CC1350_BIOSENSE_HEADBAND_SPI1_CSN,
+        .mosiPin            = CC1350_HEADSET_SPI1_MOSI,
+        .misoPin            = CC1350_HEADSET_SPI1_MISO,
+        .clkPin             = CC1350_HEADSET_SPI1_CLK,
+        .csnPin             = CC1350_HEADSET_SPI1_CSN,
         .minDmaTransferSize = 10
     }
 };
 
-const SPI_Config SPI_config[CC1350_BIOSENSE_HEADBAND_SPICOUNT] = {
+const SPI_Config SPI_config[CC1350_HEADSET_SPICOUNT] = {
     {
          .fxnTablePtr = &SPICC26XXDMA_fxnTable,
-         .object      = &spiCC26XXDMAObjects[CC1350_BIOSENSE_HEADBAND_SPI0],
-         .hwAttrs     = &spiCC26XXDMAHWAttrs[CC1350_BIOSENSE_HEADBAND_SPI0]
+         .object      = &spiCC26XXDMAObjects[CC1350_HEADSET_SPI0],
+         .hwAttrs     = &spiCC26XXDMAHWAttrs[CC1350_HEADSET_SPI0]
     },
     {
          .fxnTablePtr = &SPICC26XXDMA_fxnTable,
-         .object      = &spiCC26XXDMAObjects[CC1350_BIOSENSE_HEADBAND_SPI1],
-         .hwAttrs     = &spiCC26XXDMAHWAttrs[CC1350_BIOSENSE_HEADBAND_SPI1]
+         .object      = &spiCC26XXDMAObjects[CC1350_HEADSET_SPI1],
+         .hwAttrs     = &spiCC26XXDMAHWAttrs[CC1350_HEADSET_SPI1]
     },
 };
 
-const uint_least8_t SPI_count = CC1350_BIOSENSE_HEADBAND_SPICOUNT;
+const uint_least8_t SPI_count = CC1350_HEADSET_SPICOUNT;
 
 /*
  *  =============================== UART ===============================
@@ -768,47 +773,47 @@ const uint_least8_t SPI_count = CC1350_BIOSENSE_HEADBAND_SPICOUNT;
 #include <ti/drivers/UART.h>
 #include <ti/drivers/uart/UARTCC26XX.h>
 
-UARTCC26XX_Object uartCC26XXObjects[CC1350_BIOSENSE_HEADBAND_UARTCOUNT];
+UARTCC26XX_Object uartCC26XXObjects[CC1350_HEADSET_UARTCOUNT];
 
-uint8_t uartCC26XXRingBuffer[CC1350_BIOSENSE_HEADBAND_UARTCOUNT][32];
+uint8_t uartCC26XXRingBuffer[CC1350_HEADSET_UARTCOUNT][32];
 
-const UARTCC26XX_HWAttrsV2 uartCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_UARTCOUNT] = {
+const UARTCC26XX_HWAttrsV2 uartCC26XXHWAttrs[CC1350_HEADSET_UARTCOUNT] = {
     {
         .baseAddr       = UART0_BASE,
         .powerMngrId    = PowerCC26XX_PERIPH_UART0,
         .intNum         = INT_UART0_COMB,
         .intPriority    = ~0,
         .swiPriority    = 0,
-        .txPin          = CC1350_BIOSENSE_HEADBAND_UART_TX,
-        .rxPin          = CC1350_BIOSENSE_HEADBAND_UART_RX,
+        .txPin          = CC1350_HEADSET_UART_TX,
+        .rxPin          = CC1350_HEADSET_UART_RX,
         .ctsPin         = PIN_UNASSIGNED,
         .rtsPin         = PIN_UNASSIGNED,
-        .ringBufPtr     = uartCC26XXRingBuffer[CC1350_BIOSENSE_HEADBAND_UART0],
-        .ringBufSize    = sizeof(uartCC26XXRingBuffer[CC1350_BIOSENSE_HEADBAND_UART0]),
+        .ringBufPtr     = uartCC26XXRingBuffer[CC1350_HEADSET_UART0],
+        .ringBufSize    = sizeof(uartCC26XXRingBuffer[CC1350_HEADSET_UART0]),
         .txIntFifoThr   = UARTCC26XX_FIFO_THRESHOLD_1_8,
         .rxIntFifoThr   = UARTCC26XX_FIFO_THRESHOLD_4_8,
         .errorFxn       = NULL
     }
 };
 
-const UART_Config UART_config[CC1350_BIOSENSE_HEADBAND_UARTCOUNT] = {
+const UART_Config UART_config[CC1350_HEADSET_UARTCOUNT] = {
     {
         .fxnTablePtr = &UARTCC26XX_fxnTable,
-        .object      = &uartCC26XXObjects[CC1350_BIOSENSE_HEADBAND_UART0],
-        .hwAttrs     = &uartCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_UART0]
+        .object      = &uartCC26XXObjects[CC1350_HEADSET_UART0],
+        .hwAttrs     = &uartCC26XXHWAttrs[CC1350_HEADSET_UART0]
     },
 };
 
-const uint_least8_t UART_count = CC1350_BIOSENSE_HEADBAND_UARTCOUNT;
+const uint_least8_t UART_count = CC1350_HEADSET_UARTCOUNT;
 
 /*
  *  =============================== UDMA ===============================
  */
 #include <ti/drivers/dma/UDMACC26XX.h>
 
-UDMACC26XX_Object udmaObjects[CC1350_BIOSENSE_HEADBAND_UDMACOUNT];
+UDMACC26XX_Object udmaObjects[CC1350_HEADSET_UDMACOUNT];
 
-const UDMACC26XX_HWAttrs udmaHWAttrs[CC1350_BIOSENSE_HEADBAND_UDMACOUNT] = {
+const UDMACC26XX_HWAttrs udmaHWAttrs[CC1350_HEADSET_UDMACOUNT] = {
     {
         .baseAddr    = UDMA0_BASE,
         .powerMngrId = PowerCC26XX_PERIPH_UDMA,
@@ -817,10 +822,10 @@ const UDMACC26XX_HWAttrs udmaHWAttrs[CC1350_BIOSENSE_HEADBAND_UDMACOUNT] = {
     }
 };
 
-const UDMACC26XX_Config UDMACC26XX_config[CC1350_BIOSENSE_HEADBAND_UDMACOUNT] = {
+const UDMACC26XX_Config UDMACC26XX_config[CC1350_HEADSET_UDMACOUNT] = {
     {
-         .object  = &udmaObjects[CC1350_BIOSENSE_HEADBAND_UDMA0],
-         .hwAttrs = &udmaHWAttrs[CC1350_BIOSENSE_HEADBAND_UDMA0]
+         .object  = &udmaObjects[CC1350_HEADSET_UDMA0],
+         .hwAttrs = &udmaHWAttrs[CC1350_HEADSET_UDMA0]
     },
 };
 
@@ -830,35 +835,35 @@ const UDMACC26XX_Config UDMACC26XX_config[CC1350_BIOSENSE_HEADBAND_UDMACOUNT] = 
 #include <ti/drivers/Watchdog.h>
 #include <ti/drivers/watchdog/WatchdogCC26XX.h>
 
-WatchdogCC26XX_Object watchdogCC26XXObjects[CC1350_BIOSENSE_HEADBAND_WATCHDOGCOUNT];
+WatchdogCC26XX_Object watchdogCC26XXObjects[CC1350_HEADSET_WATCHDOGCOUNT];
 
-const WatchdogCC26XX_HWAttrs watchdogCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_WATCHDOGCOUNT] = {
+const WatchdogCC26XX_HWAttrs watchdogCC26XXHWAttrs[CC1350_HEADSET_WATCHDOGCOUNT] = {
     {
         .baseAddr    = WDT_BASE,
         .reloadValue = 1000 /* Reload value in milliseconds */
     },
 };
 
-const Watchdog_Config Watchdog_config[CC1350_BIOSENSE_HEADBAND_WATCHDOGCOUNT] = {
+const Watchdog_Config Watchdog_config[CC1350_HEADSET_WATCHDOGCOUNT] = {
     {
         .fxnTablePtr = &WatchdogCC26XX_fxnTable,
-        .object      = &watchdogCC26XXObjects[CC1350_BIOSENSE_HEADBAND_WATCHDOG0],
-        .hwAttrs     = &watchdogCC26XXHWAttrs[CC1350_BIOSENSE_HEADBAND_WATCHDOG0]
+        .object      = &watchdogCC26XXObjects[CC1350_HEADSET_WATCHDOG0],
+        .hwAttrs     = &watchdogCC26XXHWAttrs[CC1350_HEADSET_WATCHDOG0]
     },
 };
 
-const uint_least8_t Watchdog_count = CC1350_BIOSENSE_HEADBAND_WATCHDOGCOUNT;
+const uint_least8_t Watchdog_count = CC1350_HEADSET_WATCHDOGCOUNT;
 
 /*
  *  Board-specific initialization function to disable external flash.
- *  This function is defined in the file CC1350_BIOSENSE_HEADBAND_fxns.c
+ *  This function is defined in the file CC1350_HEADSET_fxns.c
  */
 extern void Board_initHook(void);
 
 /*
- *  ======== CC1350_BIOSENSE_HEADBAND_initGeneral ========
+ *  ======== CC1350_HEADSET_initGeneral ========
  */
-void CC1350_BIOSENSE_HEADBAND_initGeneral(void)
+void CC1350_HEADSET_initGeneral(void)
 {
     Power_init();
 

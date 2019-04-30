@@ -63,9 +63,6 @@
 #include "devinfoservice.h"
 #include "simple_gatt_profile.h"
 
-#include <ti/drivers/ADC.h>
-
-
 #if defined(FEATURE_OAD) || defined(IMAGE_INVALIDATE)
 #include "oad_target.h"
 #include "oad.h"
@@ -73,6 +70,7 @@
 
 #include "peripheral.h"
 #include "gapbondmgr.h"
+
 #include "osal_snv.h"
 #include "icall_apimsg.h"
 
@@ -89,7 +87,7 @@
 #endif // USE_CORE_SDK
 #include "board_key.h"
 
-#include "Board.h"
+#include "board.h"
 
 #include "simple_peripheral.h"
 
@@ -99,88 +97,11 @@
 
 #include "cos.h"
 extern const uint8_t cosVal[];
-#include <stdint.h>
-#include <stddef.h>
+extern double tempD;
+extern uint32_t pres;
+extern double mpuData[6];
 
-
-/* ADC sample count */
-#define ADC_SAMPLE_COUNT  (10)
-
-#define THREADSTACKSIZE   (768)
-
-
-
-
-
-
-
-
-/* ADC conversion result variables */
-uint16_t adcValue0;
-uint16_t adcValue1[ADC_SAMPLE_COUNT];
-uint32_t adcValue1MicroVolt[ADC_SAMPLE_COUNT];
-
-ADC_Handle   adc;
-ADC_Params   params;
-
-uint16_t BHB_adc_getVal0(){
-    int_fast16_t res;
-    adc = ADC_open(Board_ADC0, &params);
-    res = ADC_convert(adc, &adcValue0);
-    if (res == ADC_STATUS_SUCCESS) {
-        ADC_close(adc);
-        return adcValue0;
-    }
-    else {
-        ADC_close(adc);
-        return 0;
-    }
-
-
-}
-
-uint16_t BHB_adc_getVal1(){
-    int_fast16_t res;
-    adc = ADC_open(Board_ADC1, &params);
-    res = ADC_convert(adc, &adcValue0);
-    if (res == ADC_STATUS_SUCCESS) {
-        ADC_close(adc);
-        return adcValue0;
-    }
-    else {
-        ADC_close(adc);
-        return 0;
-    }
-
-
-}
-/*
- *  ======== mainThread ========
- */
-void BHB_adc_init()
-{
-
-
-    /* Call driver init functions */
-    ADC_init();
-
-
-    ADC_Params_init(&params);
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
+#include "spimaster.h"
 /*********************************************************************
  * CONSTANTS
  */
@@ -189,7 +110,7 @@ void BHB_adc_init()
 #define HI_UINT32(a) (((a) >> 16) & 0xFF)
 
 // Advertising interval when device is discoverable (units of 625us, 160=100ms)
-#define DEFAULT_ADVERTISING_INTERVAL          64
+#define DEFAULT_ADVERTISING_INTERVAL          32
 
 // Limited discoverable mode advertises for 30.72s, and then stops
 // General discoverable mode advertises indefinitely
@@ -228,7 +149,7 @@ void BHB_adc_init()
 #define DEFAULT_CONN_PAUSE_PERIPHERAL         6
 
 // How often to perform periodic event (in msec)
-#define SBP_PERIODIC_EVT_PERIOD               10
+#define SBP_PERIODIC_EVT_PERIOD               100
 
 // Type of Display to open
 #if !defined(Display_DISABLE_ALL)
@@ -326,43 +247,59 @@ Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 static uint8_t scanRspData[] =
 {
   // complete name
-  0x04,   // length of this data
+  0x1E,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
   'B',
   'H',
-  'B',
+  'S',
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA,
+  0xA
 
-  25,
-  GAP_ADTYPE_SERVICE_DATA,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
+  // 0x5,
+  // GAP_ADTYPE_SERVICE_DATA,
+  // 0xA,
+  // 0xB,
+  // 0xC,
+  // 0xD,
 
 
 
+  // // connection interval range
+  // 0x05,   // length of this data
+  // GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE,
+  // LO_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),   // 100ms
+  // HI_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),
+  // LO_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),   // 1s
+  // HI_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),
 
+  // // Tx power level
+  // 0x02,   // length of this data
+  // GAP_ADTYPE_POWER_LEVEL,
+  // 0       // 0dBm
 };
 
 // GAP - Advertisement data (max size = 31 bytes, though this is
@@ -695,47 +632,123 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
 {
   // Initialize application
   SimpleBLEPeripheral_init();
-  uint8_t count;
-  uint16_t ADC_val;
-  uint32_t period, time;
-  // uint32_t * cosValInt = *(uint32_t **) & cosVal;
+
+//  /* Construct BIOS Objects */
+//  Clock_Params clkParams;
+//
+//  Clock_Params_init(&clkParams);
+//  clkParams.period = 5000/Clock_tickPeriod;
+//  clkParams.startFlag = TRUE;
+
+  /* Construct a periodic Clock Instance */
+  //Clock_construct(&clk0Struct, (Clock_FuncPtr)clk0Fxn,
+                 // 5000/Clock_tickPeriod, &clkParams);
+
+
+
   Util_startClock(&periodicClock);
+  SPI_setup();
   // Application main loop
   for (;;)
   {
-      if (events & SBP_PERIODIC_EVT){
+      if (events & SBP_PERIODIC_EVT)
+      {
           events &= ~SBP_PERIODIC_EVT;
           Util_startClock(&periodicClock);
-          period = ti_sysbios_knl_Clock_getTickPeriod__E();
 
-          time = ti_sysbios_knl_Clock_getTicks__E(); // uint32
-
-          ADC_val = BHB_adc_getVal0();
-          scanRspData[7 + 4 * count] = ADC_val & 0xFF;
-          scanRspData[8 + 4 * count] = ADC_val >> (8) & 0xFF;
-
-          ADC_val = BHB_adc_getVal1();
-          scanRspData[9 + 4 * count] = ADC_val & 0xFF;
-          scanRspData[10 + 4 * count] = ADC_val >> (8) & 0xFF;
-
-
-          scanRspData[23 + 4 * count] = time & 0xFF;
-          scanRspData[24 + 4 * count] = time >> (8) & 0xFF;
+          pull_data_push_visuals();
 
 
 
-          count ++;
+          //scanRspData[5] = (uint8_t)(tempD);
+          //scanRspData[6] = (uint8_t)(tempD >> 8);
 
-          if(count > 3){
-              count = 0;
-              if(GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
-                                   scanRspData) != SUCCESS){
-                  //--index_var;
-              }
+          scanRspData[7] = ((int32_t)(mpuData[0]*1000));
+          scanRspData[8] = ((int32_t)(mpuData[0]*1000) >> 8);
+          scanRspData[9] = ((int32_t)(mpuData[0]*1000) >> 16);
+          scanRspData[10] =((int32_t)(mpuData[0]*1000) >> 24);
+
+          scanRspData[11] = ((int32_t)(mpuData[1]*1000));
+          scanRspData[12] = ((int32_t)(mpuData[1]*1000) >> 8);
+          scanRspData[13] = ((int32_t)(mpuData[1]*1000) >> 16);
+          scanRspData[14] = ((int32_t)(mpuData[1]*1000) >> 24);
+
+          scanRspData[15] = ((int32_t)(mpuData[2]*1000));
+          scanRspData[16] = ((int32_t)(mpuData[2]*1000) >> 8);
+          scanRspData[17] = ((int32_t)(mpuData[2]*1000) >> 16);
+          scanRspData[18] = ((int32_t)(mpuData[2]*1000) >> 24);
+
+          scanRspData[19] = ((int32_t)(mpuData[3]*1000));
+          scanRspData[20] = ((int32_t)(mpuData[3]*1000) >> 8);
+          scanRspData[21] = ((int32_t)(mpuData[3]*1000) >> 16);
+          scanRspData[22] = ((int32_t)(mpuData[3]*1000) >> 24);
+
+          scanRspData[23] = ((int32_t)(mpuData[4]*1000));
+          scanRspData[24] = ((int32_t)(mpuData[4]*1000) >> 8);
+          scanRspData[25] = ((int32_t)(mpuData[4]*1000) >> 16);
+          scanRspData[26] = ((int32_t)(mpuData[4]*1000) >> 24);
+
+          scanRspData[27] = ((int32_t)(mpuData[5]*1000));
+          scanRspData[28] = ((int32_t)(mpuData[5]*1000) >> 8);
+          scanRspData[29] = ((int32_t)(mpuData[5]*1000) >> 16);
+          scanRspData[30] = ((int32_t)(mpuData[5]*1000) >> 24);
+
+          //scanRspData[31] = (uint8_t)pres;
+
+          if(GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
+                               scanRspData) != SUCCESS)
+          {
               //--index_var;
           }
 
-      }
+       }
+    //pull_data_push_visuals();
+    /*
+    scanRspData[5] = (uint8_t)(pres);
+    scanRspData[6] = (uint8_t)(pres >> 8);
+    scanRspData[7] = (uint8_t)(pres >> 16);
+    scanRspData[8] = (uint8_t)(pres >> 24);
+    scanRspData[9] = (uint8_t)(temp);
+    scanRspData[10] = (uint8_t)(temp >> 8);
+    scanRspData[11] = (uint8_t)(temp >> 16);
+    scanRspData[12] = (uint8_t)(temp >> 24);
+
+    scanRspData[5] = (uint8_t)(pres);
+    scanRspData[6] = (uint8_t)(temp);
+
+    scanRspData[7] = (uint8_t)((uint32_t)(mpuData[0]*1000));
+    scanRspData[8] = (uint8_t)((uint32_t)(mpuData[0]*1000) >> 8);
+    scanRspData[9] = (uint8_t)((uint32_t)(mpuData[0]*1000) >> 16);
+    scanRspData[10] = (uint8_t)((uint32_t)(mpuData[0]*1000) >> 24);
+
+    scanRspData[11] = (uint8_t)((uint32_t)(mpuData[1]*1000));
+    scanRspData[12] = (uint8_t)((uint32_t)(mpuData[1]*1000) >> 8);
+    scanRspData[13] = (uint8_t)((uint32_t)(mpuData[1]*1000) >> 16);
+    scanRspData[14] = (uint8_t)((uint32_t)(mpuData[1]*1000) >> 24);
+
+    scanRspData[15] = (uint8_t)((uint32_t)(mpuData[2]*1000));
+    scanRspData[16] = (uint8_t)((uint32_t)(mpuData[2]*1000) >> 8);
+    scanRspData[17] = (uint8_t)((uint32_t)(mpuData[2]*1000) >> 16);
+    scanRspData[18] = (uint8_t)((uint32_t)(mpuData[2]*1000) >> 24);
+
+    scanRspData[19] = (uint8_t)((uint32_t)(mpuData[3]*1000));
+    scanRspData[20] = (uint8_t)((uint32_t)(mpuData[3]*1000) >> 8);
+    scanRspData[21] = (uint8_t)((uint32_t)(mpuData[3]*1000) >> 16);
+    scanRspData[22] = (uint8_t)((uint32_t)(mpuData[3]*1000) >> 24);
+
+    scanRspData[23] = (uint8_t)((uint32_t)(mpuData[4]*1000));
+    scanRspData[24] = (uint8_t)((uint32_t)(mpuData[4]*1000) >> 8);
+    scanRspData[25] = (uint8_t)((uint32_t)(mpuData[4]*1000) >> 16);
+    scanRspData[26] = (uint8_t)((uint32_t)(mpuData[4]*1000) >> 24);
+
+    scanRspData[27] = (uint8_t)((uint32_t)(mpuData[5]*1000));
+    scanRspData[28] = (uint8_t)((uint32_t)(mpuData[5]*1000) >> 8);
+    scanRspData[29] = (uint8_t)((uint32_t)(mpuData[5]*1000) >> 16);
+    scanRspData[30] = (uint8_t)((uint32_t)(mpuData[5]*1000) >> 24);*/
+
+
+    //GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData),
+                                   //scanRspData);
     // Waits for a signal to the semaphore associated with the calling thread.
     // Note that the semaphore associated with a thread is signaled when a
     // message is queued to the message receive queue of the thread or when
@@ -801,7 +814,7 @@ static void SimpleBLEPeripheral_taskFxn(UArg a0, UArg a1)
 //      Util_startClock(&periodicClock);
 //
 //      // Perform periodic application task
-//      SimpleBLEPeripheral_performPeriodicTask();
+     // SimpleBLEPeripheral_performPeriodicTask();
 //    }
 
 #ifdef FEATURE_OAD

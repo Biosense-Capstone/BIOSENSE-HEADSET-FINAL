@@ -48,7 +48,6 @@
  * INCLUDES
  */
 
-#include <Application/adcsinglechannel.h.old>
 #include <xdc/runtime/Error.h>
 
 #include <ti/drivers/Power.h>
@@ -60,6 +59,8 @@
 #include "bcomdef.h"
 #include "peripheral.h"
 #include "simple_peripheral.h"
+
+/* Header files required to enable instruction fetch cache */
 #include <inc/hw_memmap.h>
 #include <driverlib/vims.h>
 
@@ -158,7 +159,7 @@ int main()
   HWREG(PRCM_BASE + PRCM_O_PDCTL0) &= ~PRCM_PDCTL0_RFC_ON;
   HWREG(PRCM_BASE + PRCM_O_PDCTL1) &= ~PRCM_PDCTL1_RFC_ON;
 #endif // USE_FPGA
-  
+
   /* Register Application callback to trap asserts raised in the Stack */
   RegisterAssertCback(AssertHandler);
 
@@ -193,9 +194,6 @@ int main()
   Power_setConstraint(PowerCC26XX_SB_DISALLOW);
   Power_setConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
 #endif // POWER_SAVING | USE_FPGA
-  GPIO_init();
-  BHB_adc_init();
-
 
   /* Initialize ICall module */
   ICall_init();
@@ -210,9 +208,6 @@ int main()
 
   /* enable interrupts and start SYS/BIOS */
   BIOS_start();
-
-
-
 
   return 0;
 }

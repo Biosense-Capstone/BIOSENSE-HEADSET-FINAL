@@ -31,7 +31,7 @@
  */
 
 /*
- * ======== CC1350_BIOSENSE_HEADBAND_fxns.c ========
+ * ======== CC1350_LAUNCHXL_fxns.c ========
  *  This file contains the board-specific initialization functions, and
  *  RF callback function for antenna switching.
  */
@@ -50,9 +50,9 @@
 
 
 /*
- *  ======== CC1350_BIOSENSE_HEADBAND_sendExtFlashByte ========
+ *  ======== CC1350_LAUNCHXL_sendExtFlashByte ========
  */
-void CC1350_BIOSENSE_HEADBAND_sendExtFlashByte(PIN_Handle pinHandle, uint8_t byte)
+void CC1350_LAUNCHXL_sendExtFlashByte(PIN_Handle pinHandle, uint8_t byte)
 {
     uint8_t i;
 
@@ -85,9 +85,9 @@ void CC1350_BIOSENSE_HEADBAND_sendExtFlashByte(PIN_Handle pinHandle, uint8_t byt
 }
 
 /*
- *  ======== CC1350_BIOSENSE_HEADBAND_wakeUpExtFlash ========
+ *  ======== CC1350_LAUNCHXL_wakeUpExtFlash ========
  */
-void CC1350_BIOSENSE_HEADBAND_wakeUpExtFlash(void)
+void CC1350_LAUNCHXL_wakeUpExtFlash(void)
 {
     PIN_Config extFlashPinTable[] = {
         /* SPI Flash CS */
@@ -115,15 +115,15 @@ void CC1350_BIOSENSE_HEADBAND_wakeUpExtFlash(void)
 }
 
 /*
- *  ======== CC1350_BIOSENSE_HEADBAND_shutDownExtFlash ========
+ *  ======== CC1350_LAUNCHXL_shutDownExtFlash ========
  */
-void CC1350_BIOSENSE_HEADBAND_shutDownExtFlash(void)
+void CC1350_LAUNCHXL_shutDownExtFlash(void)
 {
     /*
      *  To be sure we are putting the flash into sleep and not waking it,
      *  we first have to make a wake up call
      */
-    CC1350_BIOSENSE_HEADBAND_wakeUpExtFlash();
+    CC1350_LAUNCHXL_wakeUpExtFlash();
 
     PIN_Config extFlashPinTable[] = {
         /* SPI Flash CS*/
@@ -144,7 +144,7 @@ void CC1350_BIOSENSE_HEADBAND_shutDownExtFlash(void)
 
     uint8_t extFlashShutdown = 0xB9;
 
-    CC1350_BIOSENSE_HEADBAND_sendExtFlashByte(extFlashPinHandle, extFlashShutdown);
+    CC1350_LAUNCHXL_sendExtFlashByte(extFlashPinHandle, extFlashShutdown);
 
     PIN_close(extFlashPinHandle);
 }
@@ -155,7 +155,7 @@ void CC1350_BIOSENSE_HEADBAND_shutDownExtFlash(void)
  */
 void Board_initHook()
 {
-    CC1350_BIOSENSE_HEADBAND_shutDownExtFlash();
+    CC1350_LAUNCHXL_shutDownExtFlash();
 }
 
 /*
@@ -166,7 +166,7 @@ void Board_initHook()
 #if defined(Board_RF_SUB1GHZ)
 
 /*
- * ======== CC1350_BIOSENSE_HEADBAND_rfDriverCallback ========
+ * ======== CC1350_LAUNCHXL_rfDriverCallback ========
  * This is an implementation for the CC1350 launchpad which uses a
  * single signal for antenna switching.
  */
